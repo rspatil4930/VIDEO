@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Community Video Post Maker</title>
+    <title>Video Post Maker</title>
     <link href="https://fonts.googleapis.com/css2?family=Hind+Vadodara:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -30,6 +30,7 @@
             border: 1px solid #ddd;
             margin-top: 15px;
             border-radius: 8px;
+            background: #000;
         }
         .controls {
             display: flex;
@@ -45,11 +46,17 @@
         }
         .btn-group { display: flex; gap: 10px; }
         .btn-group button { flex: 1; }
-        #playPauseBtn { background-color: #555; }
-        #downloadBtn { background-color: #800000; color: white; border: none; font-weight: bold; cursor: pointer; }
-        #downloadBtn:disabled { background-color: #ccc; cursor: not-allowed; }
-        button:hover { opacity: 0.9; }
-        .hint { font-size: 12px; color: #666; margin-bottom: 5px; }
+        button {
+            background-color: #800000;
+            color: white;
+            cursor: pointer;
+            border: none;
+            font-weight: bold;
+        }
+        button:hover { background-color: #5a0000; }
+        button.recording { background-color: #ff0000; animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0.6; } }
+        .hint { font-size: 12px; color: #666; margin-bottom: 5px; text-align: left; }
     </style>
 </head>
 <body>
@@ -66,7 +73,7 @@
 
         <div class="btn-group">
             <button id="playPauseBtn">Pause</button>
-            <button id="downloadBtn">વીડિયો ડાઉનલોડ કરો</button>
+            <button id="downloadBtn">Download MP4</button>
         </div>
     </div>
 
@@ -82,17 +89,18 @@
     const downloadBtn = document.getElementById('downloadBtn');
 
     const video = document.createElement('video');
-    video.src = '1.mp4';
-    video.muted = true;
+    video.src = '1.mp4'; 
+    video.crossOrigin = "anonymous";
     video.loop = true;
-    video.crossOrigin = "anonymous"; 
+    video.muted = false; // Audio enabled
 
     let userImg = null;
+    let isRecording = false;
 
     // Drawing Loop
-    function draw() {
+    function update() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        ctx.drawImage(video, 0, 0, 1080, 1380);
 
         if (userImg) {
             ctx.save();
@@ -113,14 +121,14 @@
         ctx.textAlign = "left";
         ctx.fillText(text, 100, 1244);
 
-        if (!video.paused && !video.ended) {
-            requestAnimationFrame(draw);
-        }
+        requestAnimationFrame(update);
     }
 
-    video.addEventListener('play', () => { requestAnimationFrame(draw); });
+    video.addEventListener('play', () => {
+        update();
+    });
 
-    // Play/Pause Logic
+    // Play/Pause Control
     playPauseBtn.addEventListener('click', () => {
         if (video.paused) {
             video.play();
@@ -136,44 +144,63 @@
         const reader = new FileReader();
         reader.onload = (event) => {
             userImg = new Image();
-            userImg.onload = () => draw();
+            userImg.onload = () => {};
             userImg.src = event.target.result;
         };
         reader.readAsDataURL(e.target.files[0]);
     });
 
-    userNameInput.addEventListener('input', draw);
+    // Recording Logic
+    downloadBtn.addEventListener('click', async () => {
+        if (isRecording) return;
+        
+        isRecording = true;
+        downloadBtn.innerText = "Recording...";
+        downloadBtn.classList.add('recording');
 
-    // Video Recording Logic
-    downloadBtn.addEventListener('click', () => {
-        const stream = canvas.captureStream(30); // 30 FPS
-        const recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9' });
+        // Restart video for clean recording
+        video.currentTime = 0;
+        await video.play();
+
         const chunks = [];
+        const canvasStream = canvas.captureStream(30); // 30 FPS
+        
+        // Capture Audio from video
+        const audioCtx = new AudioContext();
+        const source = audioCtx.createMediaElementSource(video);
+        const dest = audioCtx.createMediaStreamDestination();
+        source.connect(dest);
+        source.connect(audioCtx.destination); // Let user hear it too
 
-        recorder.ondataavailable = e => chunks.push(e.data);
+        // Merge Canvas Video + Video Audio
+        const combinedStream = new MediaStream([
+            ...canvasStream.getVideoTracks(),
+            ...dest.stream.getAudioTracks()
+        ]);
+
+        const recorder = new MediaRecorder(combinedStream, { mimeType: 'video/webm;codecs=vp9' });
+
+        recorder.ondataavailable = (e) => chunks.push(e.data);
         recorder.onstop = () => {
-            const blob = new Blob(chunks, { type: 'video/webm' });
+            const blob = new Blob(chunks, { type: 'video/mp4' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'community-post-video.webm';
+            a.download = 'community-post.mp4';
             a.click();
-            downloadBtn.innerText = "વીડિયો ડાઉનલોડ કરો";
-            downloadBtn.disabled = false;
+            
+            isRecording = false;
+            downloadBtn.innerText = "Download MP4";
+            downloadBtn.classList.remove('recording');
         };
 
-        // Record for the length of the video or 5 seconds
+        // Record for the length of the video
         recorder.start();
-        downloadBtn.innerText = "રેકોર્ડિંગ શરૂ છે...";
-        downloadBtn.disabled = true;
-        
         setTimeout(() => {
             recorder.stop();
-        }, 5000); // Records 5 seconds
+        }, video.duration * 1000 || 5000); // Record full duration or 5s fallback
     });
 
-    // Initialize
-    video.play();
 </script>
 
 </body>
