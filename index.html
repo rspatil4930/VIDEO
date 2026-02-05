@@ -150,15 +150,15 @@
         reader.readAsDataURL(e.target.files[0]);
     });
 
-    // Recording Logic
+    // Downloading Logic
     downloadBtn.addEventListener('click', async () => {
-        if (isRecording) return;
+        if (isDownloading) return;
         
-        isRecording = true;
+        idownloading = true;
         downloadBtn.innerText = "Recording...";
-        downloadBtn.classList.add('recording');
+        downloadBtn.classList.add('downloading');
 
-        // Restart video for clean recording
+        // Restart video for clean downloading 
         video.currentTime = 0;
         await video.play();
 
@@ -205,3 +205,4 @@
 
 </body>
 </html>
+
