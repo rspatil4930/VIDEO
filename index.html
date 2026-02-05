@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Community Video Post Maker</title>
+    <title>Community Post Maker (Video)</title>
     <link href="https://fonts.googleapis.com/css2?family=Hind+Vadodara:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -30,7 +30,6 @@
             border: 1px solid #ddd;
             margin-top: 15px;
             border-radius: 8px;
-            background: #000;
         }
         .controls {
             display: flex;
@@ -53,16 +52,12 @@
         }
         button:hover { background-color: #5a0000; }
         .hint { font-size: 12px; color: #666; margin-bottom: 5px; }
-        /* Keep video hidden, we only want it on canvas */
-        #bgVideo { display: none; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>વીડિયો પોસ્ટ એડિટર</h2>
-
-    <video id="bgVideo" src="1.mp4" loop muted crossorigin="anonymous"></video>
+    <h2>પોસ્ટ એડિટર (Video)</h2>
 
     <div class="controls">
         <label class="hint">તમારો ફોટો પસંદ કરો:</label>
@@ -71,12 +66,85 @@
         <label class="hint">તમારું નામ અને વિગત લખો:</label>
         <input type="text" id="userName" placeholder="તમારું નામ, હોદ્દો, સરનામું" maxlength="50">
 
-        <button id="playBtn">વીડિયો શરૂ કરો / બંધ કરો</button>
-        <p class="hint">નોંધ: વીડિયો રેકોર્ડ કરવા માટે સ્ક્રીન રેકોર્ડરનો ઉપયોગ કરો અથવા એડવાન્સ લાયબ્રેરીની જરૂર પડશે.</p>
+        <p class="hint">નોંધ: વિડિયો પોસ્ટ ડાઉનલોડ કરવા માટે 'રેકોર્ડ' મોડ જરૂરી છે. અત્યારે આ પ્રિવ્યૂ માટે છે.</p>
     </div>
 
     <canvas id="mainCanvas" width="1080" height="1380"></canvas>
 </div>
 
 <script>
-    const canvas = document.getElementById('main
+    const canvas = document.getElementById('mainCanvas');
+    const ctx = canvas.getContext('2d');
+    const imageLoader = document.getElementById('imageLoader');
+    const userNameInput = document.getElementById('userName');
+
+    // Create Video Element
+    const video = document.createElement('video');
+    video.src = '1.mp4'; // Your video file
+    video.muted = true;
+    video.loop = true;
+    video.autoplay = true;
+    video.playsInline = true;
+
+    let userImg = null;
+
+    // Load video and start drawing
+    video.addEventListener('play', () => {
+        function step() {
+            drawCanvas();
+            requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+    });
+
+    function drawCanvas() {
+        // 1. Draw Video Frame as Background
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(video, 0, 0, 1080, 1380);
+
+        // 2. Draw User Image in Circle
+        if (userImg) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(936, 1229, 115, 0, Math.PI * 2, true); 
+            ctx.closePath();
+            ctx.clip();
+
+            const aspect = userImg.width / userImg.height;
+            let drawWidth, drawHeight;
+            if (aspect > 1) {
+                drawHeight = 230;
+                drawWidth = 230 * aspect;
+            } else {
+                drawWidth = 230;
+                drawHeight = 230 / aspect;
+            }
+            ctx.drawImage(userImg, 936 - drawWidth/2, 1229 - drawHeight/2, drawWidth, drawHeight);
+            ctx.restore();
+        }
+
+        // 3. Draw Text
+        const text = userNameInput.value || "તમારું નામ, હોદ્દો, સરનામું";
+        ctx.font = "700 60px 'Hind Vadodara'";
+        ctx.fillStyle = "white";
+        ctx.textAlign = "left";
+        ctx.fillText(text, 100, 1244); 
+    }
+
+    // Handle Image Upload
+    imageLoader.addEventListener('change', (e) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            userImg = new Image();
+            userImg.src = event.target.result;
+        };
+        reader.readAsDataURL(e.target.files[0]);
+    });
+
+    // Start video playback
+    video.play().catch(e => console.log("Auto-play blocked, waiting for user interaction."));
+
+</script>
+
+</body>
+</html>
