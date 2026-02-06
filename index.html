@@ -109,13 +109,13 @@
         if (userImg) {
             ctx.save();
             ctx.beginPath();
-            ctx.arc(936, 1385, 115, 0, Math.PI * 2, true);
+            ctx.arc(930, 1370, 115, 0, Math.PI * 2, true);
             ctx.clip();
             const aspect = userImg.width / userImg.height;
             let dw, dh;
             if (aspect > 1) { dh = 230; dw = 230 * aspect; }
             else { dw = 230; dh = 230 / aspect; }
-            ctx.drawImage(userImg, 936 - dw/2, 1385 - dh/2, dw, dh);
+            ctx.drawImage(userImg, 930 - dw/2, 1370 - dh/2, dw, dh);
             ctx.restore();
         }
 
@@ -125,7 +125,7 @@
         ctx.font = "700 60px 'Hind Vadodara'";
         ctx.fillStyle = "white";
         ctx.textAlign = "left";
-        ctx.fillText(text, 100, 1500);
+        ctx.fillText(text, 100, 1450);
 
         requestAnimationFrame(update);
     }
@@ -210,4 +210,5 @@
 
 </body>
 </html>
+
 
